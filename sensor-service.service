@@ -1,0 +1,13 @@
+# If you modify this, please also make sure to edit init.sh
+
+[Unit]
+Description=Sensor-service logging 1-wire sensors to InfluxDB
+After=influxdb.target
+
+[Service]
+ExecStart=/opt/sensor-service/sensor-service.py > /var/log/sensor-service/service.log 2>&1
+KillMode=control-group
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
