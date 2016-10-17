@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys, time
+import logging
 import RPi.GPIO as GPIO
 import pyownet
 from influxdb import InfluxDBClient
@@ -18,7 +19,15 @@ password = "root"
 # database to save all our logging to
 db_name = "sensors"
 
-print 'Starting sensor daemon.'
+logging.basicConfig( filename="/opt/sensor-service/sensor-service.log",
+                     filemode='w',
+                     level=logging.DEBUG,
+                     format= '%(asctime)s - %(levelname)s - %(message)s',
+                   )
+
+logger=logging.getLogger(__name__)
+
+logging.info('Starting sensor daemon.')
 # setup raspberry pi pins
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(rain_sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -27,7 +36,7 @@ db = InfluxDBClient(host, port, user, password, db_name)
 
 # function to be called when it's raining 
 def rain_trigger_callback(channel):
-	print 'The Rain Keeps Pouring Down. ' + time.strftime('%a, %d %b %Y %H:%M:%S %Z(%z)')
+	logger.info('The Rain Keeps Pouring Down. %s', time.strftime('%a, %d %b %Y %H:%M:%S %Z(%z)'))
 	# setup values to save to the database. database will add timestamp automatically
 	json_body = [
 	{
@@ -38,7 +47,10 @@ def rain_trigger_callback(channel):
        			}
 	}]
 	# save to database
-	db.write_points(json_body)
+	try:
+		db.write_points(json_body)
+	except Exception, e:
+		logger.error('Failed to log rainsensor reading to database. %s', e, exc_info=True)
 
 # register callback for rising-edge interrupt on rain sensor pin, and add a debounce time of 1000 ms.
 GPIO.add_event_detect(rain_sensor_pin, GPIO.RISING, callback=rain_trigger_callback, bouncetime=1000)  
@@ -48,7 +60,7 @@ try:
 	owproxy = pyownet.protocol.proxy(host='localhost', port=4304, flags=0, persistent=False, verbose=False)
 	# get list of all available 1-wire sensors, but only the sensors that starts with family name = 10 (DS1820)
 	owdevices = [d for d in owproxy.dir() if '10.' in d]
-	print 'Found owdevices: ' + str(owdevices)
+	logger.info('Found owdevices: %s', str(owdevices))
 
 	# loop until program exists
 	while True:
@@ -58,7 +70,7 @@ try:
 			id = id.replace('/', '')
 			# read temperature from one sensor, convert reading to a float-value
 			temp = float(owproxy.read('/{0}/temperature'.format(id)))
-			print 'Read temperature: {0} from device: {1}'.format(temp, id)
+			logger.info('Read temperature: {0} from device: {1}'.format(temp, id))
 			# setup values to save to the database. database will add timestamp automatically
 			json_body = [
 	       				{
@@ -71,15 +83,16 @@ try:
                 				}
         				}]
 			# save to database
-        		db.write_points(json_body)
+			try:
+        			db.write_points(json_body)
+			except Exception, e:
+				logger.error('Failed to log temperature readings to database. %s', e, exc_info=True) 
 
 		# wait 600 seconds(10 minutes) before we read sensors again
 		time.sleep(600)
 	
 except pyownet.protocol.Error as err:
-	log = open('/var/log/sensor-service/error.log', 'w')
-	log.write('Something went wrong: {}'.format(err))
-	log.close()
+	logger.error('Failed to read from Owserver. %s', err, exc_info=True)
 	GPIO.cleanup()
 except KeyboardInterrupt:  
 	GPIO.cleanup()

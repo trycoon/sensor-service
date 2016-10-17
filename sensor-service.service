@@ -2,10 +2,10 @@
 
 [Unit]
 Description=Sensor-service logging 1-wire sensors to InfluxDB
-After=influxdb.target
+After=influxdb.service owserver.service
 
 [Service]
-ExecStart=/opt/sensor-service/sensor-service.py > /var/log/sensor-service/service.log 2>&1
+ExecStart=/opt/sensor-service/sensor-service.py
 KillMode=control-group
 Restart=on-failure
 
