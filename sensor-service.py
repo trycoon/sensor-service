@@ -7,7 +7,7 @@ import pyownet
 from influxdb import InfluxDBClient
 
 # change this to the pin used to monitor the rain sensor
-rain_sensor_pin = 23
+rain_sensor_pin = 4
 # database engine host
 host='localhost'
 # database engine port
@@ -17,7 +17,7 @@ user = "root"
 # database engine password
 password = "root"
 # database to save all our logging to
-db_name = "sensors"
+db_name = "home"
 
 logging.basicConfig( filename="/var/log/sensor-service.log",
                      filemode='w',
