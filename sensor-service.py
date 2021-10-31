@@ -26,6 +26,12 @@ logging.basicConfig( filename="/var/log/sensor-service.log",
                      format= '%(asctime)s - %(levelname)s - %(message)s',
                    )
 
+# set up logging to console
+console = logging.StreamHandler()
+console.setLevel(logging.DEBUG)
+# add the handler to the root logger
+logging.getLogger('').addHandler(console)
+
 logger=logging.getLogger(__name__)
 
 logging.info('Starting sensor daemon.')
