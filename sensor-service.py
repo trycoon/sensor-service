@@ -1,23 +1,24 @@
 #!/usr/bin/env python
 
-import sys, time
+import sys, time, os
 import logging
 import RPi.GPIO as GPIO
 import pyownet
 from influxdb import InfluxDBClient
 
+
 # change this to the pin used to monitor the rain sensor
-rain_sensor_pin = 5
+rain_sensor_pin = 4
 # database engine host
-host='localhost'
+host = os.getenv('INFLUXDB_HOST', 'localhost')
 # database engine port
 port = 8086
 # database engine user
-user = "root"
+user = os.getenv('INFLUXDB_USER', 'admin')
 # database engine password
-password = "root"
+password = os.getenv('INFLUXDB_PASSWD', 'admin')
 # database to save all our logging to
-db_name = "home"
+db_name = os.getenv('INFLUXDB_DB', 'sensors')
 
 logging.basicConfig( filename="/var/log/sensor-service.log",
                      filemode='w',
@@ -57,7 +58,7 @@ GPIO.add_event_detect(rain_sensor_pin, GPIO.RISING, callback=rain_trigger_callba
 
 try:
 	# setup owserver(1-wire) connection
-	owproxy = pyownet.protocol.proxy(host='localhost', port=4304, flags=0, persistent=False, verbose=False)
+	owproxy = pyownet.protocol.proxy(host=os.getenv('OWSERVER_HOST', 'localhost'), port=4304, flags=0, persistent=False, verbose=False)
 	# get list of all available 1-wire sensors, but only the sensors that starts with family name = 10 (DS1820)
 	owdevices = [d for d in owproxy.dir() if '10.' in d]
 	logger.info('Found owdevices: %s', str(owdevices))
