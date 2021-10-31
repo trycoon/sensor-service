@@ -19,7 +19,7 @@ password = "root"
 # database to save all our logging to
 db_name = "sensors"
 
-logging.basicConfig( filename="/opt/sensor-service/sensor-service.log",
+logging.basicConfig( filename="/var/log/sensor-service.log",
                      filemode='w',
                      level=logging.DEBUG,
                      format= '%(asctime)s - %(levelname)s - %(message)s',
