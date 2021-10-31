@@ -49,8 +49,8 @@ def rain_trigger_callback(channel):
 	# save to database
 	try:
 		db.write_points(json_body)
-	except Exception, e:
-		logger.error('Failed to log rainsensor reading to database. %s', e, exc_info=True)
+	except Exception as err:
+		logger.error('Failed to log rainsensor reading to database. %s', err, exc_info=True)
 
 # register callback for rising-edge interrupt on rain sensor pin, and add a debounce time of 1000 ms.
 GPIO.add_event_detect(rain_sensor_pin, GPIO.RISING, callback=rain_trigger_callback, bouncetime=1000)  
@@ -85,8 +85,8 @@ try:
 			# save to database
 			try:
         			db.write_points(json_body)
-			except Exception, e:
-				logger.error('Failed to log temperature readings to database. %s', e, exc_info=True) 
+			except Exception as err:
+				logger.error('Failed to log temperature readings to database. %s', err, exc_info=True) 
 
 		# wait 600 seconds(10 minutes) before we read sensors again
 		time.sleep(600)
