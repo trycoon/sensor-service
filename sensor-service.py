@@ -2,13 +2,13 @@
 
 import sys, time, os
 import logging
-import RPi.GPIO as GPIO
 import pyownet
+from gpiozero import Button
 from influxdb import InfluxDBClient
 
 
 # change this to the pin used to monitor the rain sensor
-rain_sensor_pin = 5
+rain_sensor_pin = 23
 # database engine host
 host = os.getenv('INFLUXDB_HOST', 'localhost')
 # database engine port
@@ -35,9 +35,8 @@ logging.getLogger('').addHandler(console)
 logger=logging.getLogger(__name__)
 
 logging.info('Starting sensor daemon.')
-# setup raspberry pi pins
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(rain_sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+# setup raspberry pi pin to detect pulses for rain sensor, 1 second debounce 
+btn = Button(rain_sensor_pin, pull_up=True, bounce_time=1)
 # setup influx database engine connection and sensor database 
 db = InfluxDBClient(host, port, user, password, db_name)
 
@@ -59,8 +58,8 @@ def rain_trigger_callback(channel):
 	except Exception as err:
 		logger.error('Failed to log rainsensor reading to database. %s', err, exc_info=True)
 
-# register callback for rising-edge interrupt on rain sensor pin, and add a debounce time of 1000 ms.
-GPIO.add_event_detect(rain_sensor_pin, GPIO.RISING, callback=rain_trigger_callback, bouncetime=1000)  
+# register callback for rising-edge interrupt on rain sensor pin.
+btn.when_released = rain_trigger_callback
 
 try:
 	# setup owserver(1-wire) connection
@@ -100,6 +99,5 @@ try:
 	
 except pyownet.protocol.Error as err:
 	logger.error('Failed to read from Owserver. %s', err, exc_info=True)
-	GPIO.cleanup()
 except KeyboardInterrupt:  
-	GPIO.cleanup()
+	btn.close()
