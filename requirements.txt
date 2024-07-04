@@ -1,3 +1,6 @@
 influxdb
-RPi.GPIO
+gpiozero
+rpi.gpio
+pigpio
+lgpio
 pyownet
